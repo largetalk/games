@@ -25,6 +25,7 @@ def main():
         screen.fill(0)
         screen.blit(background, (0, 0))
 
+        player.shoot()
         player.show(screen)
 
         pygame.display.update()
