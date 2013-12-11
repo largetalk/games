@@ -1,7 +1,8 @@
 #--coding:utf8--
 
-from settings import *
 import pygame
+import random
+from settings import *
 
 
 shoot_img = pygame.image.load(SHOOT_IMG)
@@ -76,14 +77,80 @@ class Player(pygame.sprite.Sprite):
 
 
 bullet_rect = pygame.Rect(1004, 987, 9, 21)
+bullet_image = shoot_img.subsurface(bullet_rect)
   
 class Bullet(pygame.sprite.Sprite):
     def __init__(self, init_pos):
         pygame.sprite.Sprite.__init__(self)
-        self.image = shoot_img.subsurface(bullet_rect)
+        self.image = bullet_image
         self.rect = self.image.get_rect()
         self.rect.midbottom = init_pos
         self.speed = 10
 
     def move(self):
         self.rect.top -= self.speed
+
+# 定义敌机对象使用的surface相关参数
+enemy_rect = pygame.Rect(534, 612, 57, 43)
+enemy_img = shoot_img.subsurface(enemy_rect)
+enemy_down_imgs = []
+enemy_down_imgs.append(shoot_img.subsurface(pygame.Rect(267, 347, 57, 43)))
+enemy_down_imgs.append(shoot_img.subsurface(pygame.Rect(873, 697, 57, 43)))
+enemy_down_imgs.append(shoot_img.subsurface(pygame.Rect(267, 296, 57, 43)))
+enemy_down_imgs.append(shoot_img.subsurface(pygame.Rect(930, 697, 57, 43)))
+
+class Enemy(pygame.sprite.Sprite):
+    def __init__(self, init_pos):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = enemy_img
+        self.rect = self.image.get_rect()
+        self.rect.topleft = init_pos
+        self.down_imgs = enemy_down_imgs
+        self.speed = 2
+        self.down_index = 0
+
+    def move(self):
+        self.rect.top += self.speed
+
+class EnemyCollection(object):
+    def __init__(self):
+        self.frequence = 0
+        self.enemies = pygame.sprite.Group()
+
+    def add_enemy(self):
+        if self.frequence % 50 == 0:
+            enemy_pos = [random.randint(0, SCREEN_WIDTH - enemy_rect.width), 0]
+            enemy = Enemy( enemy_pos)
+            self.enemies.add(enemy)
+        self.frequence += 1
+        if self.frequence >= 100:
+            self.frequence = 0
+
+    def move(self):
+        for enemy in self.enemies:
+            enemy.move()
+            if enemy.rect.top < 0:
+                self.enemies.remove(enemy)
+        
+
+    def show(self, screen):
+        self.add_enemy()
+        self.move()
+        self.enemies.draw(screen)
+
+class EnemyDownCollection(object):
+    def __init__(self):
+        self.enemies = pygame.sprite.Group()
+
+    def add(self, enemies):
+        for enemy in enemies:
+            self.enemies.add(enemy)
+
+    def show(self, screen):
+        for enemy in self.enemies:
+            if enemy.down_index > 7:
+                self.enemies.remove(enemy)
+                continue
+            screen.blit(enemy.down_imgs[enemy.down_index / 2], enemy.rect)
+            enemy.down_index += 1
+
